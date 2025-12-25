@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f6f8;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --border: #e2e8f0;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-foreground: #eff6ff;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.card {
+  @apply rounded-2xl bg-white/95 ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.08)] backdrop-blur;
+}
+
+.card-muted {
+  @apply rounded-2xl bg-slate-50/80 ring-1 ring-slate-200/70 shadow-[0_1px_2px_rgba(15,23,42,0.06)];
+}
+
+.chip {
+  @apply inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500;
+}
+
+.divider {
+  @apply h-px w-full bg-slate-200/70;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100;
+}
+
+.input {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-slate-300 focus:outline-none focus:ring-4 focus:ring-slate-200/60;
+}
+
+.label {
+  @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+}
+
+.stat-value {
+  @apply text-3xl font-semibold tracking-tight text-slate-900;
+}
+
+.animate-enter {
+  animation: fade-up 420ms ease-out;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

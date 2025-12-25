@@ -1,0 +1,9 @@
+diff --git a/src/app/api/auth/login/route.ts b/src/app/api/auth/login/route.ts
+index 5b69cd6..f6936ed 100644
+--- a/src/app/api/auth/login/route.ts
++++ b/src/app/api/auth/login/route.ts
+@@
+   if (!isSameOrigin(req)) {
+-    return NextResponse.json({ error: "RequǦte refusǸe" }, { status: 403 });
++    return NextResponse.json({ error: "Requete refusee" }, { status: 403 });
+   }

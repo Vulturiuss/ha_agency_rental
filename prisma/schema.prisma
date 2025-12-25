@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")  
+}
+
+enum AssetStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+}
+
+enum LocationStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id                Int               @id @default(autoincrement())
+  email             String            @unique
+  passwordHash      String
+  createdAt         DateTime          @default(now())
+  locations         Location[]        @relation("LocationCreatedBy")
+  updatedLocations  Location[]        @relation("LocationUpdatedBy")
+  expenses          Expense[]         @relation("ExpenseCreatedBy")
+  updatedExpenses   Expense[]         @relation("ExpenseUpdatedBy")
+  assets            Asset[]           @relation("AssetCreatedBy")
+  updatedAssets     Asset[]           @relation("AssetUpdatedBy")
+  expenseTemplates  ExpenseTemplate[] @relation("ExpenseTemplateCreatedBy")
+  updatedTemplates  ExpenseTemplate[] @relation("ExpenseTemplateUpdatedBy")
+}
+
+model Asset {
+  id            Int         @id @default(autoincrement())
+  name          String
+  category      String
+  purchasePrice Decimal     @db.Decimal(10, 2)
+  purchaseDate  DateTime
+  status        AssetStatus @default(AVAILABLE)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+  createdById   Int
+  updatedById   Int?
+  createdBy     User        @relation("AssetCreatedBy", fields: [createdById], references: [id])
+  updatedBy     User?       @relation("AssetUpdatedBy", fields: [updatedById], references: [id])
+  locations     Location[]
+}
+
+model Location {
+  id            Int            @id @default(autoincrement())
+  assetId       Int
+  date          DateTime
+  price         Decimal        @db.Decimal(10, 2)
+  clientName    String?
+  locationStatus LocationStatus @default(PLANNED)
+  createdById   Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
+  updatedById   Int?
+  asset         Asset          @relation(fields: [assetId], references: [id])
+  createdBy     User           @relation("LocationCreatedBy", fields: [createdById], references: [id])
+  updatedBy     User?          @relation("LocationUpdatedBy", fields: [updatedById], references: [id])
+  expenses      Expense[]
+}
+
+model ExpenseTemplate {
+  id          Int       @id @default(autoincrement())
+  name        String
+  defaultCost Decimal?  @db.Decimal(10, 2)
+  createdById Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  updatedById Int?
+  createdBy   User      @relation("ExpenseTemplateCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?     @relation("ExpenseTemplateUpdatedBy", fields: [updatedById], references: [id])
+  expenses    Expense[]
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  locationId  Int?
+  templateId  Int?
+  name        String
+  cost        Decimal  @db.Decimal(10, 2)
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedById Int?
+  location    Location?       @relation(fields: [locationId], references: [id])
+  template    ExpenseTemplate? @relation(fields: [templateId], references: [id])
+  createdBy   User            @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?           @relation("ExpenseUpdatedBy", fields: [updatedById], references: [id])
+}
+
