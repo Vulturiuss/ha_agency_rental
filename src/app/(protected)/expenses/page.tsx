@@ -12,14 +12,28 @@ export default async function ExpensesPage() {
   const user = await requireUser();
   const [templates, expenses, locations] = await Promise.all([
     prisma.expenseTemplate.findMany({
+      where: { createdById: user.id },
       orderBy: { name: "asc" },
     }),
     prisma.expense.findMany({
-      include: { location: { include: { asset: true } }, template: true },
+      where: { createdById: user.id },
+      select: {
+        id: true,
+        name: true,
+        cost: true,
+        createdAt: true,
+        locationId: true,
+        templateId: true,
+        location: {
+          select: { id: true, asset: { select: { name: true } } },
+        },
+        template: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.location.findMany({
-      include: { asset: true },
+      where: { createdById: user.id },
+      select: { id: true, assetId: true, asset: { select: { name: true } } },
       orderBy: { date: "desc" },
     }),
   ]);

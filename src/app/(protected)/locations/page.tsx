@@ -10,10 +10,15 @@ export default async function LocationsPage() {
   const user = await requireUser();
   const [locations, assets] = await Promise.all([
     prisma.location.findMany({
-      include: { asset: true, expenses: true },
+      where: { createdById: user.id },
+      include: {
+        asset: { select: { id: true, name: true } },
+        expenses: { select: { cost: true, name: true } },
+      },
       orderBy: { date: "desc" },
     }),
     prisma.asset.findMany({
+      where: { createdById: user.id },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

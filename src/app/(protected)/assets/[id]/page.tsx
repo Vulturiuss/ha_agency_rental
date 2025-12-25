@@ -20,17 +20,29 @@ export default async function AssetDetail({
 
   const [asset, assetsCount, globalExpensesAgg] = await Promise.all([
     prisma.asset.findFirst({
-      where: { id },
-      include: {
+      where: { id, createdById: user.id },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        purchasePrice: true,
         locations: {
-          include: { expenses: true },
+          where: { createdById: user.id },
+          select: {
+            id: true,
+            date: true,
+            price: true,
+            clientName: true,
+            locationStatus: true,
+            expenses: { select: { cost: true, name: true } },
+          },
           orderBy: { date: "desc" },
         },
       },
     }),
-    prisma.asset.count(),
+    prisma.asset.count({ where: { createdById: user.id } }),
     prisma.expense.aggregate({
-      where: { locationId: null },
+      where: { locationId: null, createdById: user.id },
       _sum: { cost: true },
     }),
   ]);

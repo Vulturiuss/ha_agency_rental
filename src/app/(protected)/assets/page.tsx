@@ -8,13 +8,22 @@ export default async function AssetsPage() {
   const user = await requireUser();
   const [assets, globalExpensesAgg] = await Promise.all([
     prisma.asset.findMany({
-      include: {
-        locations: { include: { expenses: true } },
+      where: { createdById: user.id },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        status: true,
+        purchasePrice: true,
+        purchaseDate: true,
+        locations: {
+          select: { price: true, expenses: { select: { cost: true } } },
+        },
       },
       orderBy: { createdAt: "desc" },
     }),
     prisma.expense.aggregate({
-      where: { locationId: null },
+      where: { locationId: null, createdById: user.id },
       _sum: { cost: true },
     }),
   ]);

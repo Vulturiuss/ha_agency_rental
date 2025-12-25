@@ -135,19 +135,27 @@ export default async function DashboardPage() {
     purchaseAgg,
     trendLocations,
   ] = await Promise.all([
-    prisma.asset.count(),
+    prisma.asset.count({ where: { createdById: user.id } }),
     prisma.location.aggregate({
+      where: { createdById: user.id },
       _sum: { price: true },
     }),
     prisma.expense.aggregate({
+      where: { createdById: user.id },
       _sum: { cost: true },
     }),
     prisma.asset.aggregate({
+      where: { createdById: user.id },
       _sum: { purchasePrice: true },
     }),
     prisma.location.findMany({
-      include: { asset: true },
-      where: { date: { gte: start } },
+      select: {
+        date: true,
+        price: true,
+        locationStatus: true,
+        asset: { select: { name: true } },
+      },
+      where: { createdById: user.id, date: { gte: start } },
       orderBy: { date: "asc" },
     }),
   ]);
