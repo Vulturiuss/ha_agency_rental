@@ -6,6 +6,7 @@ import { serializeMoney, toNumber } from "@/lib/serializers";
 import { isSameOrigin } from "@/lib/csrf";
 import { parseIdParam } from "@/lib/route-params";
 import { ZodError } from "zod";
+import { revalidateTag } from "next/cache";
 
 const notFound = NextResponse.json({ error: "Asset introuvable" }, { status: 404 });
 
@@ -108,6 +109,11 @@ export async function PUT(
       },
     });
 
+    revalidateTag("assets");
+    revalidateTag("dashboard");
+    revalidateTag("locations");
+    revalidateTag("expenses");
+
     return NextResponse.json({
       asset: { ...serializeMoney(updated), purchasePrice: toNumber(updated.purchasePrice) },
     });
@@ -146,6 +152,10 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.asset.delete({ where: { id } });
+    revalidateTag("assets");
+    revalidateTag("dashboard");
+    revalidateTag("locations");
+    revalidateTag("expenses");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { toNumber } from "@/lib/serializers";
 import { MonthlyRevenueChart } from "@/components/charts/monthly-revenue-chart";
+import { unstable_cache } from "next/cache";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -127,38 +128,57 @@ export default async function DashboardPage() {
   const start = new Date();
   start.setMonth(start.getMonth() - 11, 1);
   start.setHours(0, 0, 0, 0);
+  const cacheKey = format(start, "yyyy-MM");
 
-  const [
+  const getDashboardData = unstable_cache(
+    async () => {
+      const [
+        assetsCount,
+        revenueAgg,
+        expensesAgg,
+        purchaseAgg,
+        trendLocations,
+      ] = await Promise.all([
+        prisma.asset.count(),
+        prisma.location.aggregate({
+          _sum: { price: true },
+        }),
+        prisma.expense.aggregate({
+          _sum: { cost: true },
+        }),
+        prisma.asset.aggregate({
+          _sum: { purchasePrice: true },
+        }),
+        prisma.location.findMany({
+          select: {
+            date: true,
+            price: true,
+            locationStatus: true,
+            asset: { select: { name: true } },
+          },
+          where: { date: { gte: start } },
+          orderBy: { date: "asc" },
+        }),
+      ]);
+      return {
+        assetsCount,
+        revenueAgg,
+        expensesAgg,
+        purchaseAgg,
+        trendLocations,
+      };
+    },
+    ["dashboard", cacheKey],
+    { tags: ["dashboard"] }
+  );
+
+  const {
     assetsCount,
     revenueAgg,
     expensesAgg,
     purchaseAgg,
     trendLocations,
-  ] = await Promise.all([
-    prisma.asset.count({ where: { createdById: user.id } }),
-    prisma.location.aggregate({
-      where: { createdById: user.id },
-      _sum: { price: true },
-    }),
-    prisma.expense.aggregate({
-      where: { createdById: user.id },
-      _sum: { cost: true },
-    }),
-    prisma.asset.aggregate({
-      where: { createdById: user.id },
-      _sum: { purchasePrice: true },
-    }),
-    prisma.location.findMany({
-      select: {
-        date: true,
-        price: true,
-        locationStatus: true,
-        asset: { select: { name: true } },
-      },
-      where: { createdById: user.id, date: { gte: start } },
-      orderBy: { date: "asc" },
-    }),
-  ]);
+  } = await getDashboardData();
 
   const revenueTotal = toNumber(revenueAgg._sum.price);
   const expensesTotal = toNumber(expensesAgg._sum.cost);

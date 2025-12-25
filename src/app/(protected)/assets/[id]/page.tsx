@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { toNumber } from "@/lib/serializers";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { unstable_cache } from "next/cache";
 
 export default async function AssetDetail({
   params,
@@ -18,34 +19,42 @@ export default async function AssetDetail({
     return notFound();
   }
 
-  const [asset, assetsCount, globalExpensesAgg] = await Promise.all([
-    prisma.asset.findFirst({
-      where: { id, createdById: user.id },
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        purchasePrice: true,
-        locations: {
-          where: { createdById: user.id },
+  const getAssetData = unstable_cache(
+    async () => {
+      const [asset, assetsCount, globalExpensesAgg] = await Promise.all([
+        prisma.asset.findFirst({
+          where: { id },
           select: {
             id: true,
-            date: true,
-            price: true,
-            clientName: true,
-            locationStatus: true,
-            expenses: { select: { cost: true, name: true } },
+            name: true,
+            status: true,
+            purchasePrice: true,
+            locations: {
+              select: {
+                id: true,
+                date: true,
+                price: true,
+                clientName: true,
+                locationStatus: true,
+                expenses: { select: { cost: true, name: true } },
+              },
+              orderBy: { date: "desc" },
+            },
           },
-          orderBy: { date: "desc" },
-        },
-      },
-    }),
-    prisma.asset.count({ where: { createdById: user.id } }),
-    prisma.expense.aggregate({
-      where: { locationId: null, createdById: user.id },
-      _sum: { cost: true },
-    }),
-  ]);
+        }),
+        prisma.asset.count(),
+        prisma.expense.aggregate({
+          where: { locationId: null },
+          _sum: { cost: true },
+        }),
+      ]);
+      return { asset, assetsCount, globalExpensesAgg };
+    },
+    ["asset-detail", String(id)],
+    { tags: ["assets", "locations", "expenses"] }
+  );
+
+  const { asset, assetsCount, globalExpensesAgg } = await getAssetData();
 
   if (!asset) return notFound();
 

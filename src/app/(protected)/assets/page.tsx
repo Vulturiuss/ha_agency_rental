@@ -3,32 +3,48 @@ import { requireUser } from "@/lib/auth";
 import { toNumber } from "@/lib/serializers";
 import { AssetForm } from "@/components/forms/asset-form";
 import { AssetList } from "@/components/lists/asset-list";
+import { unstable_cache } from "next/cache";
 
 export default async function AssetsPage() {
   const user = await requireUser();
-  const [assets, globalExpensesAgg] = await Promise.all([
-    prisma.asset.findMany({
-      where: { createdById: user.id },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        status: true,
-        purchasePrice: true,
-        purchaseDate: true,
-        locations: {
-          select: { price: true, expenses: { select: { cost: true } } },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.expense.aggregate({
-      where: { locationId: null, createdById: user.id },
-      _sum: { cost: true },
-    }),
-  ]);
+  const getAssetsData = unstable_cache(
+    async () => {
+      const [assets, globalExpensesAgg] = await Promise.all([
+        prisma.asset.findMany({
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            status: true,
+            purchasePrice: true,
+            purchaseDate: true,
+            locations: {
+              select: { price: true, expenses: { select: { cost: true } } },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.expense.aggregate({
+          where: { locationId: null },
+          _sum: { cost: true },
+        }),
+      ]);
+      return { assets, globalExpensesAgg };
+    },
+    ["assets-page"],
+    { tags: ["assets"] }
+  );
+
+  const { assets, globalExpensesAgg } = await getAssetsData();
   const globalExpensesTotal = toNumber(globalExpensesAgg._sum.cost);
   const globalShare = assets.length > 0 ? globalExpensesTotal / assets.length : 0;
+
+  const formatDate = (value: Date | string | null) => {
+    if (!value) return "";
+    const date = typeof value === "string" ? new Date(value) : value;
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+  };
 
   const assetItems = assets.map((asset) => {
     const revenue = asset.locations.reduce(
@@ -47,9 +63,7 @@ export default async function AssetsPage() {
       category: asset.category,
       status: asset.status,
       purchasePrice: toNumber(asset.purchasePrice),
-      purchaseDate: asset.purchaseDate
-        ? asset.purchaseDate.toISOString().slice(0, 10)
-        : "",
+      purchaseDate: formatDate(asset.purchaseDate ?? null),
       revenue,
       expenses: expenses + globalShare,
     };

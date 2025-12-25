@@ -6,6 +6,7 @@ import { serializeMoney, toNumber } from "@/lib/serializers";
 import { isSameOrigin } from "@/lib/csrf";
 import { parseIdParam } from "@/lib/route-params";
 import { ZodError } from "zod";
+import { revalidateTag } from "next/cache";
 
 const notFound = NextResponse.json({ error: "Location introuvable" }, { status: 404 });
 
@@ -93,6 +94,11 @@ export async function PUT(
       data: { ...parsed, updatedById: user.id },
     });
 
+    revalidateTag("locations");
+    revalidateTag("assets");
+    revalidateTag("expenses");
+    revalidateTag("dashboard");
+
     return NextResponse.json({
       location: {
         ...serializeMoney(updated),
@@ -134,6 +140,10 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.location.delete({ where: { id } });
+    revalidateTag("locations");
+    revalidateTag("assets");
+    revalidateTag("expenses");
+    revalidateTag("dashboard");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

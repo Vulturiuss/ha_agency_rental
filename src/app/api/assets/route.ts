@@ -5,6 +5,7 @@ import { requireApiUser } from "@/lib/auth";
 import { serializeMoney, toNumber } from "@/lib/serializers";
 import { isSameOrigin } from "@/lib/csrf";
 import { ZodError } from "zod";
+import { revalidateTag } from "next/cache";
 
 export async function GET() {
   const user = await requireApiUser();
@@ -91,6 +92,11 @@ export async function POST(req: Request) {
       },
     });
 
+    revalidateTag("assets");
+    revalidateTag("dashboard");
+    revalidateTag("locations");
+    revalidateTag("expenses");
+
     return NextResponse.json({
       asset: { ...serializeMoney(asset), purchasePrice: toNumber(asset.purchasePrice) },
     });
@@ -104,4 +110,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

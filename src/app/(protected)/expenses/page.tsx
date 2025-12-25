@@ -7,36 +7,43 @@ import { ExpenseList } from "@/components/lists/expense-list";
 import { TemplateList } from "@/components/lists/template-list";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { unstable_cache } from "next/cache";
 
 export default async function ExpensesPage() {
   const user = await requireUser();
-  const [templates, expenses, locations] = await Promise.all([
-    prisma.expenseTemplate.findMany({
-      where: { createdById: user.id },
-      orderBy: { name: "asc" },
-    }),
-    prisma.expense.findMany({
-      where: { createdById: user.id },
-      select: {
-        id: true,
-        name: true,
-        cost: true,
-        createdAt: true,
-        locationId: true,
-        templateId: true,
-        location: {
-          select: { id: true, asset: { select: { name: true } } },
-        },
-        template: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.location.findMany({
-      where: { createdById: user.id },
-      select: { id: true, assetId: true, asset: { select: { name: true } } },
-      orderBy: { date: "desc" },
-    }),
-  ]);
+  const getExpensesData = unstable_cache(
+    async () => {
+      const [templates, expenses, locations] = await Promise.all([
+        prisma.expenseTemplate.findMany({
+          orderBy: { name: "asc" },
+        }),
+        prisma.expense.findMany({
+          select: {
+            id: true,
+            name: true,
+            cost: true,
+            createdAt: true,
+            locationId: true,
+            templateId: true,
+            location: {
+              select: { id: true, asset: { select: { name: true } } },
+            },
+            template: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.location.findMany({
+          select: { id: true, assetId: true, asset: { select: { name: true } } },
+          orderBy: { date: "desc" },
+        }),
+      ]);
+      return { templates, expenses, locations };
+    },
+    ["expenses-page"],
+    { tags: ["expenses"] }
+  );
+
+  const { templates, expenses, locations } = await getExpensesData();
 
   const templateItems = templates.map((tpl) => ({
     id: tpl.id,

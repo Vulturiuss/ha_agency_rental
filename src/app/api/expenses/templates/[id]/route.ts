@@ -6,6 +6,7 @@ import { serializeMoney, toNumber } from "@/lib/serializers";
 import { isSameOrigin } from "@/lib/csrf";
 import { parseIdParam } from "@/lib/route-params";
 import { ZodError } from "zod";
+import { revalidateTag } from "next/cache";
 
 const notFound = NextResponse.json(
   { error: "Template introuvable" },
@@ -42,6 +43,8 @@ export async function PUT(
       where: { id },
       data: { ...parsed, updatedById: user.id },
     });
+
+    revalidateTag("expenses");
 
     return NextResponse.json({
       template: {
@@ -85,6 +88,7 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.expenseTemplate.delete({ where: { id } });
+    revalidateTag("expenses");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

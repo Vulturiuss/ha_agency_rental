@@ -5,24 +5,44 @@ import { toNumber } from "@/lib/serializers";
 import { LocationList } from "@/components/lists/location-list";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { unstable_cache } from "next/cache";
 
 export default async function LocationsPage() {
   const user = await requireUser();
-  const [locations, assets] = await Promise.all([
-    prisma.location.findMany({
-      where: { createdById: user.id },
-      include: {
-        asset: { select: { id: true, name: true } },
-        expenses: { select: { cost: true, name: true } },
-      },
-      orderBy: { date: "desc" },
-    }),
-    prisma.asset.findMany({
-      where: { createdById: user.id },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const getLocationsData = unstable_cache(
+    async () => {
+      const [locations, assets] = await Promise.all([
+        prisma.location.findMany({
+          include: {
+            asset: { select: { id: true, name: true } },
+            expenses: { select: { cost: true, name: true } },
+          },
+          orderBy: { date: "desc" },
+        }),
+        prisma.asset.findMany({
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      ]);
+      return { locations, assets };
+    },
+    ["locations-page"],
+    { tags: ["locations"] }
+  );
+
+  const { locations, assets } = await getLocationsData();
+
+  const formatDate = (value: Date | string) => {
+    const date = typeof value === "string" ? new Date(value) : value;
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+  };
+
+  const formatDateLabel = (value: Date | string) => {
+    const date = typeof value === "string" ? new Date(value) : value;
+    if (Number.isNaN(date.getTime())) return "";
+    return format(date, "dd MMM yyyy", { locale: fr });
+  };
 
   const assetOptions = assets.map((asset) => ({
     id: asset.id,
@@ -38,8 +58,8 @@ export default async function LocationsPage() {
       id: loc.id,
       assetId: loc.assetId,
       assetName: loc.asset.name,
-      date: loc.date.toISOString().slice(0, 10),
-      dateLabel: format(loc.date, "dd MMM yyyy", { locale: fr }),
+      date: formatDate(loc.date),
+      dateLabel: formatDateLabel(loc.date),
       price: toNumber(loc.price),
       clientName: loc.clientName ?? null,
       locationStatus: loc.locationStatus,

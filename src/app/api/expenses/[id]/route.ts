@@ -6,6 +6,7 @@ import { serializeMoney, toNumber } from "@/lib/serializers";
 import { isSameOrigin } from "@/lib/csrf";
 import { parseIdParam } from "@/lib/route-params";
 import { ZodError } from "zod";
+import { revalidateTag } from "next/cache";
 
 const notFound = NextResponse.json(
   { error: "Charge introuvable" },
@@ -82,6 +83,11 @@ export async function PUT(
       },
     });
 
+    revalidateTag("expenses");
+    revalidateTag("locations");
+    revalidateTag("assets");
+    revalidateTag("dashboard");
+
     return NextResponse.json({
       expense: { ...serializeMoney(updated), cost: toNumber(updated.cost) },
     });
@@ -120,6 +126,10 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.expense.delete({ where: { id } });
+    revalidateTag("expenses");
+    revalidateTag("locations");
+    revalidateTag("assets");
+    revalidateTag("dashboard");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
