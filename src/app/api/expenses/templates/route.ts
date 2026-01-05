@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       },
     });
 
-    revalidateTag("expenses");
+    revalidateTag("expenses",{});
 
     return NextResponse.json({
       template: {

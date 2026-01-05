@@ -109,10 +109,11 @@ export async function PUT(
       },
     });
 
-    revalidateTag("assets");
-    revalidateTag("dashboard");
-    revalidateTag("locations");
-    revalidateTag("expenses");
+    revalidateTag("assets",{});
+    revalidateTag("dashboard",{});
+    revalidateTag("locations",{});
+    revalidateTag("expenses",{});
+
 
     return NextResponse.json({
       asset: { ...serializeMoney(updated), purchasePrice: toNumber(updated.purchasePrice) },
@@ -152,10 +153,11 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.asset.delete({ where: { id } });
-    revalidateTag("assets");
-    revalidateTag("dashboard");
-    revalidateTag("locations");
-    revalidateTag("expenses");
+    revalidateTag("assets",{});
+    revalidateTag("dashboard",{});
+    revalidateTag("locations",{});
+    revalidateTag("expenses",{});
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

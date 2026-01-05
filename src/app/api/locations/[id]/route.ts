@@ -94,10 +94,10 @@ export async function PUT(
       data: { ...parsed, updatedById: user.id },
     });
 
-    revalidateTag("locations");
-    revalidateTag("assets");
-    revalidateTag("expenses");
-    revalidateTag("dashboard");
+    revalidateTag("locations",{});
+    revalidateTag("assets",{});
+    revalidateTag("expenses",{});
+    revalidateTag("dashboard",{});
 
     return NextResponse.json({
       location: {
@@ -140,10 +140,10 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.location.delete({ where: { id } });
-    revalidateTag("locations");
-    revalidateTag("assets");
-    revalidateTag("expenses");
-    revalidateTag("dashboard");
+    revalidateTag("locations",{});
+    revalidateTag("assets",{});
+    revalidateTag("expenses",{});
+    revalidateTag("dashboard",{});
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

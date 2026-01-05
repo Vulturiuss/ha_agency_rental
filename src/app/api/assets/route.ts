@@ -92,10 +92,10 @@ export async function POST(req: Request) {
       },
     });
 
-    revalidateTag("assets");
-    revalidateTag("dashboard");
-    revalidateTag("locations");
-    revalidateTag("expenses");
+    revalidateTag("assets",{});
+    revalidateTag("dashboard",{});
+    revalidateTag("locations",{});
+    revalidateTag("expenses",{});
 
     return NextResponse.json({
       asset: { ...serializeMoney(asset), purchasePrice: toNumber(asset.purchasePrice) },

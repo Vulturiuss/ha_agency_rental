@@ -73,10 +73,10 @@ export async function POST(req: Request) {
       },
     });
 
-    revalidateTag("locations");
-    revalidateTag("assets");
-    revalidateTag("expenses");
-    revalidateTag("dashboard");
+    revalidateTag("locations",{});
+    revalidateTag("assets",{});
+    revalidateTag("expenses",{});
+    revalidateTag("dashboard",{});
 
     return NextResponse.json({
       location: { ...serializeMoney(created), price: toNumber(created.price) },

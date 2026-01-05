@@ -105,10 +105,10 @@ export async function POST(req: Request) {
       },
     });
 
-    revalidateTag("expenses");
-    revalidateTag("locations");
-    revalidateTag("assets");
-    revalidateTag("dashboard");
+    revalidateTag("expenses",{});
+    revalidateTag("locations",{});
+    revalidateTag("assets",{});
+    revalidateTag("dashboard",{});
 
     return NextResponse.json({
       expense: { ...serializeMoney(created), cost: toNumber(created.cost) },

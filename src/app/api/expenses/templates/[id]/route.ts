@@ -44,7 +44,7 @@ export async function PUT(
       data: { ...parsed, updatedById: user.id },
     });
 
-    revalidateTag("expenses");
+    revalidateTag("expenses",{});
 
     return NextResponse.json({
       template: {
@@ -88,7 +88,7 @@ export async function DELETE(
     if (!existing) return notFound;
 
     await prisma.expenseTemplate.delete({ where: { id } });
-    revalidateTag("expenses");
+    revalidateTag("expenses",{});
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
