@@ -136,7 +136,6 @@ export default async function DashboardPage() {
         assetsCount,
         revenueAgg,
         expensesAgg,
-        purchaseAgg,
         trendLocations,
       ] = await Promise.all([
         prisma.asset.count(),
@@ -145,9 +144,6 @@ export default async function DashboardPage() {
         }),
         prisma.expense.aggregate({
           _sum: { cost: true },
-        }),
-        prisma.asset.aggregate({
-          _sum: { purchasePrice: true },
         }),
         prisma.location.findMany({
           select: {
@@ -164,7 +160,6 @@ export default async function DashboardPage() {
         assetsCount,
         revenueAgg,
         expensesAgg,
-        purchaseAgg,
         trendLocations,
       };
     },
@@ -176,13 +171,11 @@ export default async function DashboardPage() {
     assetsCount,
     revenueAgg,
     expensesAgg,
-    purchaseAgg,
     trendLocations,
   } = await getDashboardData();
 
   const revenueTotal = toNumber(revenueAgg._sum.price);
   const expensesTotal = toNumber(expensesAgg._sum.cost);
-  const purchaseTotal = toNumber(purchaseAgg._sum.purchasePrice);
 
   const revenueByAsset = trendLocations.reduce((acc, loc) => {
     acc[loc.asset.name] = (acc[loc.asset.name] || 0) + toNumber(loc.price);
@@ -243,8 +236,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Benefice net"
-          value={`${(revenueTotal - expensesTotal - purchaseTotal).toFixed(2)} EUR`}
-          hint="Apres achats"
+          value={`${(revenueTotal - expensesTotal).toFixed(2)} EUR`}
+          hint="Apres charges"
         />
         <StatCard label="Assets suivis" value={String(assetsCount)} hint="Parc actif" />
       </div>
